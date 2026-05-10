@@ -36,7 +36,7 @@ export default function Home() {
 			<SummaryCards bmkgData={mounted ? bmkgData : []} alertCount={alerts.length} />
 			<NotificationCard />
 			<ReportCTA />
-			<AlertFeed />
+			<AlertFeed alerts={alerts} />
 			<WeatherFooter bmkgData={bmkgData} />
 		</main>
 	);

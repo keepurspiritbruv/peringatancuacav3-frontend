@@ -1,9 +1,10 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { ShieldCheck, ShieldAlert } from "lucide-react";
-import { BEACHES } from "@/lib/constants";
+import { AlertTriangle, Calendar, Users, Clock, CheckCircle } from "lucide-react";
+import { BEACHES, LIK_SIGNS } from "@/lib/constants";
 import type { AlertFeedItem } from "@/lib/types";
+import { deriveAlertTitle, deriveStartDate, deriveEndDate } from "@/lib/alert-utils";
 
 function relativeTime(ts: number): string {
 	const diff = Date.now() - ts;
@@ -17,7 +18,28 @@ function relativeTime(ts: number): string {
 
 function beachName(slug: string): string {
 	const b = BEACHES.find((x) => x.id === slug);
-	return b?.label ?? slug.replace(/_/g, " ");
+	return b?.name ?? slug.replace(/_/g, " ");
+}
+
+function formatDateTime(iso: string): string {
+	const d = new Date(iso);
+	return d.toLocaleDateString("id-ID", {
+		day: "numeric",
+		month: "long",
+		year: "numeric",
+		hour: "2-digit",
+		minute: "2-digit",
+	});
+}
+
+function formatTime(iso: string): string {
+	const d = new Date(iso);
+	return d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+}
+
+function codeToLabel(code: string): string {
+	const sign = LIK_SIGNS.find((s) => s.code === code);
+	return sign?.label ?? code;
 }
 
 function isUnsafe(risk: string): boolean {
@@ -27,8 +49,7 @@ function isUnsafe(risk: string): boolean {
 
 export function AlertCard({ alert }: { alert: AlertFeedItem }) {
 	const unsafe = isUnsafe(alert.riskLevel);
-	const visibleCodes = alert.triggeredCodes.slice(0, 3);
-	const extraCount = alert.triggeredCodes.length - 3;
+	const Icon = unsafe ? AlertTriangle : CheckCircle;
 
 	return (
 		<Card
@@ -36,52 +57,55 @@ export function AlertCard({ alert }: { alert: AlertFeedItem }) {
 				unsafe ? "border-l-[#DC2626]" : "border-l-[#16A34A]"
 			}`}
 		>
-			<CardContent className="p-3">
-				<div className="flex items-center justify-between">
-					<span className="text-sm font-semibold">{beachName(alert.beachLocation)}</span>
-					<span className="text-xs text-muted-foreground">
+			<CardContent className="p-4 space-y-3">
+				<div className="flex items-start gap-2">
+					<Icon
+						size={20}
+						className={unsafe ? "text-[#DC2626] mt-0.5 flex-shrink-0" : "text-[#16A34A] mt-0.5 flex-shrink-0"}
+					/>
+					<div className="flex-1 min-w-0">
+						<h3 className="text-sm font-semibold leading-tight">{deriveAlertTitle(alert)}</h3>
+					</div>
+					<span className="text-xs text-muted-foreground flex-shrink-0">
 						{relativeTime(alert.serverTimestamp)}
 					</span>
 				</div>
 
-				<div className="mt-1.5">
-					<span
-						className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${
-							unsafe
-								? "bg-[#DC2626]/10 text-[#DC2626]"
-								: "bg-[#16A34A]/10 text-[#16A34A]"
-						}`}
-					>
-						{unsafe ? (
-							<ShieldAlert className="h-3.5 w-3.5" />
-						) : (
-							<ShieldCheck className="h-3.5 w-3.5" />
-						)}
-						{unsafe ? "Tidak Aman" : "Aman"}
+				<div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+					<Calendar size={12} />
+					<span>{new Date(alert.serverTimestamp).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}</span>
+				</div>
+
+				<div className="flex items-center gap-3 text-xs text-muted-foreground">
+					<span className="flex items-center gap-1">
+						<Users size={12} />
+						{alert.reporterCount} nelayan
+					</span>
+					<span className="flex items-center gap-1">
+						<Clock size={12} />
+						Pantauan: {formatTime(deriveStartDate(alert))} – {formatTime(deriveEndDate(alert))}
 					</span>
 				</div>
 
-				{alert.triggeredCodes.length > 0 && (
-					<div className="flex flex-wrap gap-1 mt-2">
-						{visibleCodes.map((code) => (
-							<span
-								key={code}
-								className="rounded-full bg-[#E2E8F0] px-2 py-0.5 text-xs text-[#475569]"
-							>
-								{code}
-							</span>
+				<div>
+					<p className="text-xs font-medium text-muted-foreground mb-1">Tanda Alam Terdeteksi:</p>
+					<ul className="space-y-0.5">
+						{alert.triggeredCodes.map((code) => (
+							<li key={code} className="text-xs text-foreground flex items-start gap-1.5">
+								<span className="text-muted-foreground mt-0.5">-</span>
+								<span>{codeToLabel(code)}</span>
+							</li>
 						))}
-						{extraCount > 0 && (
-							<span className="text-xs text-muted-foreground">+{extraCount}</span>
-						)}
-					</div>
-				)}
+					</ul>
+					{alert.signDescription && (
+						<p className="text-xs text-muted-foreground mt-1 italic">{alert.signDescription}</p>
+					)}
+				</div>
 
-				{alert.actionRecommendation && (
-					<p className="text-xs text-[#475569] mt-1">
-						{alert.actionRecommendation}
-					</p>
-				)}
+				<div>
+					<p className="text-xs font-medium text-muted-foreground mb-1">Rekomendasi Aksi:</p>
+					<p className="text-xs text-foreground leading-relaxed">{alert.actionRecommendation}</p>
+				</div>
 			</CardContent>
 		</Card>
 	);

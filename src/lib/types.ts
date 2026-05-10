@@ -4,11 +4,14 @@ export type AlertFeedItem = {
 	alertId: string;
 	beachLocation: string;
 	riskLevel: string;
-	communityCharacteristics: string;
-	actionRecommendation: string;
+	reporterCount: number;
+	firstReportAt: number;
+	lastReportAt: number;
 	signDescription: string;
+	actionRecommendation: string;
 	triggeredCodes: string[];
 	serverTimestamp: number;
+	communityCharacteristics?: string;
 };
 
 export type BmkgData = {

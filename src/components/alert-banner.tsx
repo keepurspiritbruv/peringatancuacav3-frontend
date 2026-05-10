@@ -2,6 +2,7 @@
 
 import type { AlertFeedItem } from "@/lib/types";
 import { ShieldCheck, TriangleAlert, Loader2 } from "lucide-react";
+import { deriveAlertTitle } from "@/lib/alert-utils";
 
 type AlertBannerProps = {
 	alerts: AlertFeedItem[];
@@ -21,10 +22,7 @@ function getDangerSubtitle(alerts: AlertFeedItem[]): string {
 		UNSAFE_KEYWORDS.some((kw) => a.riskLevel.toLowerCase().includes(kw)),
 	);
 	if (!unsafe) return "";
-	if (unsafe.triggeredCodes.length > 0) {
-		return `Tanda Alam: ${unsafe.triggeredCodes.join(", ")}`;
-	}
-	return unsafe.actionRecommendation || "";
+	return deriveAlertTitle(unsafe);
 }
 
 export function AlertBanner({ alerts, loading }: AlertBannerProps) {
