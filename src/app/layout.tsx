@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Outfit, Plus_Jakarta_Sans } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { BottomNav } from "@/components/bottom-nav";
+import { WhatsAppFloatButton } from "@/components/whatsapp-float";
 import { ServiceWorkerRegistrar } from "@/components/service-worker-registrar";
 import "./globals.css";
 
@@ -44,6 +45,7 @@ export default function RootLayout({
 		<html lang="id" className={`${outfit.variable} ${jakarta.variable} h-full antialiased`}>
 			<body className="min-h-full flex flex-col bg-background text-foreground">
 				{children}
+			<WhatsAppFloatButton />
 			<BottomNav />
 			<Toaster position="top-center" />
 			<ServiceWorkerRegistrar />
