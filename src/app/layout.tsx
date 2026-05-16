@@ -1,21 +1,29 @@
 import type { Metadata, Viewport } from "next";
-import { Outfit, Plus_Jakarta_Sans } from "next/font/google";
+import localFont from "next/font/local";
 import { Toaster } from "@/components/ui/sonner";
 import { BottomNav } from "@/components/bottom-nav";
 import { WhatsAppFloatButton } from "@/components/whatsapp-float";
 import { ServiceWorkerRegistrar } from "@/components/service-worker-registrar";
 import "./globals.css";
 
-const outfit = Outfit({
+const outfit = localFont({
+	src: [
+		{ path: "../fonts/Outfit-400.ttf", weight: "400", style: "normal" },
+		{ path: "../fonts/Outfit-600.ttf", weight: "600", style: "normal" },
+		{ path: "../fonts/Outfit-700.ttf", weight: "700", style: "normal" },
+	],
 	variable: "--font-heading",
-	subsets: ["latin"],
-	weight: ["400", "500", "600", "700"],
+	display: "swap",
 });
 
-const jakarta = Plus_Jakarta_Sans({
+const jakarta = localFont({
+	src: [
+		{ path: "../fonts/JakartaSans-400.ttf", weight: "400", style: "normal" },
+		{ path: "../fonts/JakartaSans-500.ttf", weight: "500", style: "normal" },
+		{ path: "../fonts/JakartaSans-600.ttf", weight: "600", style: "normal" },
+	],
 	variable: "--font-sans",
-	subsets: ["latin"],
-	weight: ["400", "500", "600"],
+	display: "swap",
 });
 
 export const metadata: Metadata = {
