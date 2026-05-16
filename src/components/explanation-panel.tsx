@@ -4,6 +4,7 @@ import type { ExplanationData } from "@/lib/types";
 import { ContributionBarChart } from "./contribution-bar-chart";
 import { CommunityProfileTable } from "./community-profile-table";
 import { CrossValidationBadge } from "./cross-validation-badge";
+import { ExplanationInfo } from "./explanation-info";
 
 type ExplanationPanelProps = {
 	explanation: ExplanationData;
@@ -30,11 +31,14 @@ export function ExplanationPanel({ explanation, reassurance }: ExplanationPanelP
 			<ContributionBarChart contributions={explanation.contributions} />
 
 			{explanation.community_profile && (
-				<CommunityProfileTable
-					beach={explanation.community_profile.beach}
-					overall={explanation.community_profile.overall}
-					factors={explanation.community_profile.factors}
-				/>
+				<>
+					<CommunityProfileTable
+						beach={explanation.community_profile.beach}
+						overall={explanation.community_profile.overall}
+						factors={explanation.community_profile.factors}
+					/>
+					<ExplanationInfo />
+				</>
 			)}
 
 			{reassurance && (
