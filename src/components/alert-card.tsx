@@ -1,10 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { AlertTriangle, Calendar, Users, Clock, CheckCircle } from "lucide-react";
+import { AlertTriangle, Calendar, Users, Clock, CheckCircle, ChevronDown, ChevronUp, Info } from "lucide-react";
 import { BEACHES, LIK_SIGNS } from "@/lib/constants";
-import type { AlertFeedItem } from "@/lib/types";
+import type { AlertFeedItem, ExplanationData } from "@/lib/types";
 import { deriveAlertTitle, deriveStartDate, deriveEndDate } from "@/lib/alert-utils";
+import { ExplanationPanel } from "./explanation-panel";
+import { fetchAlertExplanation } from "@/lib/api";
 
 function relativeTime(ts: number): string {
 	const diff = Date.now() - ts;
@@ -50,6 +53,43 @@ function isUnsafe(risk: string): boolean {
 export function AlertCard({ alert }: { alert: AlertFeedItem }) {
 	const unsafe = isUnsafe(alert.riskLevel);
 	const Icon = unsafe ? AlertTriangle : CheckCircle;
+	const [expanded, setExpanded] = useState(false);
+	const [explanationData, setExplanationData] = useState<ExplanationData | null>(null);
+	const [reassuranceData, setReassuranceData] = useState<{ shapRisk: string; bmkgRisk: string; agreed: boolean; finalLevel: string; bmkgDetails: { waveHeight: number; windSpeed: number; hasWarning: boolean } | null } | null>(null);
+	const [loading, setLoading] = useState(false);
+
+	async function handleShowExplanation() {
+		if (expanded) {
+			setExpanded(false);
+			return;
+		}
+
+		if (alert.explanation) {
+			setExplanationData(alert.explanation);
+			setExpanded(true);
+			return;
+		}
+
+		setLoading(true);
+		try {
+			const result = await fetchAlertExplanation(alert.alertId);
+			if (result) {
+				setExplanationData({
+					summary_id: result.summary_id,
+					summary_en: result.summary_en,
+					contributions: result.contributions,
+					community_profile: result.communityProfile ?? { beach: "", overall: "", factors: [] },
+				});
+				if (result.reassurance) {
+					setReassuranceData(result.reassurance);
+				}
+			}
+			setExpanded(true);
+		} catch {
+		} finally {
+			setLoading(false);
+		}
+	}
 
 	return (
 		<Card
@@ -106,6 +146,21 @@ export function AlertCard({ alert }: { alert: AlertFeedItem }) {
 					<p className="text-xs font-medium text-muted-foreground mb-1">Rekomendasi Aksi:</p>
 					<p className="text-xs text-foreground leading-relaxed">{alert.actionRecommendation}</p>
 				</div>
+
+				<button
+					type="button"
+					onClick={handleShowExplanation}
+					disabled={loading}
+					className="flex items-center gap-1.5 text-xs text-[#0EA5E9] font-medium hover:underline disabled:opacity-50 w-full"
+				>
+					<Info size={14} />
+					{loading ? "Memuat..." : expanded ? "Sembunyikan Penjelasan" : "Kenapa bahaya?"}
+					{expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+				</button>
+
+				{expanded && explanationData && (
+					<ExplanationPanel explanation={explanationData} reassurance={reassuranceData} />
+				)}
 			</CardContent>
 		</Card>
 	);
