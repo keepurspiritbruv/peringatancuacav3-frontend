@@ -12,6 +12,7 @@ export type AlertFeedItem = {
 	triggeredCodes: string[];
 	serverTimestamp: number;
 	communityCharacteristics?: string;
+	explanation?: ExplanationData;
 };
 
 export type BmkgData = {
@@ -41,4 +42,58 @@ export type ReportResult = {
 	reportCounts?: Record<string, number>;
 	deduped?: boolean;
 	error?: string;
+};
+
+export type ContributionItem = {
+	factor: string;
+	label_id: string;
+	label_en: string;
+	category: "natural_sign" | "community";
+	weight: number;
+	direction: "increases_risk" | "neutral";
+	detail_id: string;
+	detail_en: string;
+};
+
+export type CommunityProfileFactor = {
+	key: string;
+	label_id: string;
+	label_en: string;
+	value: number;
+	status: string;
+	detail_id: string;
+	detail_en: string;
+};
+
+export type ExplanationData = {
+	summary_id: string;
+	summary_en: string;
+	contributions: ContributionItem[];
+	community_profile: {
+		beach: string;
+		overall: string;
+		factors: CommunityProfileFactor[];
+	};
+};
+
+export type AlertExplanationResponse = {
+	alertId: string;
+	riskLevel: string;
+	beachLocation: string;
+	summary_id: string;
+	summary_en: string;
+	contributions: ContributionItem[];
+	communityProfile: ExplanationData["community_profile"] | null;
+	reassurance: {
+		shapRisk: string;
+		bmkgRisk: string;
+		agreed: boolean;
+		finalLevel: string;
+		bmkgDetails: {
+			waveHeight: number;
+			windSpeed: number;
+			hasWarning: boolean;
+		} | null;
+	} | null;
+	createdAt: string | null;
 };

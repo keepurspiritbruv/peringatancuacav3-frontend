@@ -1,5 +1,5 @@
 import { BEACHES, LIK_SIGNS } from "./constants";
-import type { AlertFeedItem } from "./types";
+import type { AlertFeedItem, ExplanationData } from "./types";
 
 type RawAlertEvent = {
 	alertId?: string;
@@ -22,6 +22,33 @@ type RawAlertEvent = {
 		action_recommendation?: string;
 		community_characteristics?: string;
 		triggered_lik_codes?: string[];
+		explanation?: {
+			summary_id?: string;
+			summary_en?: string;
+			contributions?: Array<{
+				factor: string;
+				label_id: string;
+				label_en: string;
+				category: string;
+				weight: number;
+				direction: string;
+				detail_id: string;
+				detail_en: string;
+			}>;
+			community_profile?: {
+				beach: string;
+				overall: string;
+				factors: Array<{
+					key: string;
+					label_id: string;
+					label_en: string;
+					value: number;
+					status: string;
+					detail_id: string;
+					detail_en: string;
+				}>;
+			};
+		};
 	};
 	beachLocation?: string;
 	triggeredCodes?: string[];
@@ -52,6 +79,7 @@ export function transformAlert(raw: RawAlertEvent): AlertFeedItem {
 		triggeredCodes: raw.triggeredCodes ?? raw.ml?.triggered_lik_codes ?? raw.input?.lik_codes ?? [],
 		serverTimestamp: raw.serverTimestamp ?? 0,
 		communityCharacteristics: raw.communityCharacteristics ?? raw.decision?.community_characteristics,
+		explanation: raw.ml?.explanation as ExplanationData | undefined,
 	};
 }
 

@@ -1,4 +1,4 @@
-import type { AlertFeedItem, BmkgData, ReportResult } from "./types";
+import type { AlertFeedItem, BmkgData, ReportResult, AlertExplanationResponse } from "./types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "/api";
 
@@ -65,4 +65,11 @@ export async function unsubscribePush(endpoint: string): Promise<void> {
 	});
 	const json = await res.json();
 	if (!json.ok) throw new Error(json.error ?? "Failed to unsubscribe");
+}
+
+export async function fetchAlertExplanation(alertId: string): Promise<AlertExplanationResponse | null> {
+	const res = await fetch(`${API_BASE}/alerts/${alertId}/explanation`);
+	const json = await res.json();
+	if (!json.ok) return null;
+	return json.data as AlertExplanationResponse;
 }
