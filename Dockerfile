@@ -11,6 +11,7 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ARG BACKEND_URL=http://backend:3000
 ENV BACKEND_URL=$BACKEND_URL
+RUN echo "self.BUILD_ID='$(date +%s)'" > /app/public/build-id.js
 RUN npm run build
 
 FROM base AS runner

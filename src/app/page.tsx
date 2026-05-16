@@ -7,6 +7,7 @@ import { ReportCTA } from "@/components/report-cta";
 import { AlertFeed } from "@/components/alert-feed";
 import { WeatherFooter } from "@/components/weather-footer";
 import { NotificationCard } from "@/components/notification-card";
+import { InstallPrompt } from "@/components/install-prompt";
 import { fetchAllBmkgData } from "@/lib/api";
 import type { AlertFeedItem, BmkgData } from "@/lib/types";
 import { connectSSE } from "@/lib/sse";
@@ -35,6 +36,7 @@ export default function Home() {
 			<AlertBanner alerts={alerts} />
 			<SummaryCards bmkgData={mounted ? bmkgData : []} alertCount={alerts.length} />
 			<NotificationCard />
+			<InstallPrompt />
 			<ReportCTA />
 			<AlertFeed alerts={alerts} />
 			<WeatherFooter bmkgData={bmkgData} />

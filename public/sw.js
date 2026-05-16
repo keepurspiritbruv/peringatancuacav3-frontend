@@ -1,10 +1,27 @@
-const CACHE_NAME = "peringatan-v1";
-const STATIC_ASSETS = ["/", "/manifest.json"];
+importScripts("/build-id.js");
 
-self.addEventListener("install", (event) => {
-	event.waitUntil(
-		caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
-	);
+const CACHE_NAME = "peringatan-" + self.BUILD_ID;
+
+const STATIC_EXTS = [".js", ".css", ".woff2", ".ttf", ".png", ".jpg", ".svg", ".ico", ".webp"];
+const API_GET_PATHS = ["/api/alerts", "/api/bmkg", "/api/health"];
+const OFFLINE_HTML = '<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CuacaPesisir - Offline</title><style>body{font-family:system-ui,sans-serif;display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;background:#F8F6F0;color:#0A2540;text-align:center;padding:1rem}.container{max-width:400px}h1{font-size:1.25rem;margin-bottom:0.5rem}p{font-size:0.875rem;opacity:0.6;margin-bottom:1.5rem}button{background:#0EA5E9;color:#fff;border:none;padding:0.75rem 1.5rem;border-radius:0.75rem;font-size:1rem;font-weight:600;cursor:pointer}</style></head><body><div class="container"><h1>Anda sedang offline</h1><p>CuacaPesisir membutuhkan koneksi internet untuk memuat data terbaru. Silakan periksa koneksi Anda dan coba lagi.</p><button onclick="location.reload()">Coba Lagi</button></div></body></html>';
+
+function isStaticAsset(pathname) {
+	return STATIC_EXTS.some((ext) => pathname.endsWith(ext));
+}
+
+function isApiGet(pathname) {
+	return API_GET_PATHS.some((p) => pathname.startsWith(p));
+}
+
+function offlineJson() {
+	return new Response(JSON.stringify({ error: "Tidak ada koneksi" }), {
+		headers: { "Content-Type": "application/json" },
+		status: 503,
+	});
+}
+
+self.addEventListener("install", () => {
 	self.skipWaiting();
 });
 
@@ -21,27 +38,87 @@ self.addEventListener("fetch", (event) => {
 	const { request } = event;
 	const url = new URL(request.url);
 
-	if (url.pathname.startsWith("/api/")) {
+	if (isStaticAsset(url.pathname)) {
 		event.respondWith(
-			fetch(request).catch(() => new Response(JSON.stringify({ error: "Tidak ada koneksi" }), {
-				headers: { "Content-Type": "application/json" },
-				status: 503,
-			}))
+			caches.match(request).then((cached) => {
+				if (cached) return cached;
+				return fetch(request).then((response) => {
+					if (response.ok) {
+						const clone = response.clone();
+						caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+					}
+					return response;
+				});
+			})
+		);
+		return;
+	}
+
+	if (request.method === "GET" && isApiGet(url.pathname)) {
+		event.respondWith(
+			fetch(request)
+				.then((response) => {
+					if (response.status === 200) {
+						const clone = response.clone();
+						caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+					}
+					return response;
+				})
+				.catch(() =>
+					caches.match(request).then((cached) => {
+						if (cached) {
+							const dateHeader = cached.headers.get("date");
+							if (dateHeader) {
+								const age = Date.now() - new Date(dateHeader).getTime();
+								if (age < 3600000) return cached;
+							}
+						}
+						return offlineJson();
+					})
+				)
+		);
+		return;
+	}
+
+	if (request.method !== "GET" && url.pathname.startsWith("/api/")) {
+		event.respondWith(
+			fetch(request).catch(() => offlineJson())
+		);
+		return;
+	}
+
+	if (request.mode === "navigate") {
+		event.respondWith(
+			caches.match(request).then((cached) => {
+				const fetchPromise = fetch(request)
+					.then((response) => {
+						if (response.ok) {
+							const clone = response.clone();
+							caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+						}
+						return response;
+					})
+					.catch(() => undefined);
+
+				if (cached) {
+					fetchPromise.catch(() => {});
+					return cached;
+				}
+
+				return fetchPromise.then((response) => {
+					if (response) return response;
+					return new Response(OFFLINE_HTML, {
+						headers: { "Content-Type": "text/html; charset=utf-8" },
+						status: 503,
+					});
+				});
+			})
 		);
 		return;
 	}
 
 	event.respondWith(
-		caches.match(request).then((cached) => {
-			const fetchPromise = fetch(request).then((response) => {
-				if (response.ok) {
-					const clone = response.clone();
-					caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-				}
-				return response;
-			});
-			return cached || fetchPromise;
-		})
+		fetch(request).catch(() => caches.match(request))
 	);
 });
 
