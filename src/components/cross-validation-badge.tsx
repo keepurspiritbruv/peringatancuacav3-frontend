@@ -17,7 +17,7 @@ type CrossValidationBadgeProps = {
 export function CrossValidationBadge({ shapRisk, bmkgRisk, agreed, finalLevel, bmkgDetails }: CrossValidationBadgeProps) {
 	return (
 		<div>
-			<h4 className="text-xs font-semibold text-[#0A2540] mb-2">Validasi Silang (SHAP vs BMKG)</h4>
+			<h4 className="text-xs font-semibold text-[#0A2540] mb-2">Validasi Silang (SHAP + BMKG)</h4>
 			<div className={`rounded-lg border p-3 ${agreed ? "border-green-200 bg-green-50/50" : "border-yellow-200 bg-yellow-50/50"}`}>
 				<div className="flex items-center gap-2 mb-2">
 					{agreed ? (
@@ -32,18 +32,18 @@ export function CrossValidationBadge({ shapRisk, bmkgRisk, agreed, finalLevel, b
 				<div className="grid grid-cols-3 gap-2 text-center">
 					<div>
 						<p className="text-[10px] text-muted-foreground">SHAP</p>
-						<p className={`text-xs font-bold ${shapRisk === "HIGH" ? "text-red-600" : "text-green-600"}`}>
+						<p className={`text-xs font-bold ${shapRisk === "HIGH" || shapRisk === "UNSAFE" || shapRisk === "ACTIONABLE" ? "text-red-600" : "text-green-600"}`}>
 							{shapRisk}
 						</p>
 					</div>
 					<div>
 						<p className="text-[10px] text-muted-foreground">BMKG</p>
-						<p className={`text-xs font-bold ${bmkgRisk === "HIGH" ? "text-red-600" : "text-green-600"}`}>
+						<p className={`text-xs font-bold ${bmkgRisk === "HIGH" ? "text-red-600" : bmkgRisk === "MEDIUM" ? "text-yellow-600" : "text-green-600"}`}>
 							{bmkgRisk}
 						</p>
 					</div>
 					<div>
-						<p className="text-[10px] text-muted-foreground">Akhir</p>
+						<p className="text-[10px] text-muted-foreground">Fusi</p>
 						<p className="text-xs font-bold text-[#0A2540]">{finalLevel}</p>
 					</div>
 				</div>

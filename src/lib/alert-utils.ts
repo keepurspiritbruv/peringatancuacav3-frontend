@@ -12,6 +12,7 @@ type RawAlertEvent = {
 		community_characteristics?: string;
 		is_actionable?: boolean;
 		is_multisign?: boolean;
+		final_risk_level?: string;
 	};
 	input?: {
 		beach_location?: string;
@@ -50,6 +51,12 @@ type RawAlertEvent = {
 			};
 		};
 	};
+	reassurance?: {
+		shapRisk?: string;
+		bmkgRisk?: string;
+		agreed?: boolean;
+		finalLevel?: string;
+	};
 	beachLocation?: string;
 	triggeredCodes?: string[];
 	signDescription?: string;
@@ -58,12 +65,14 @@ type RawAlertEvent = {
 };
 
 function deriveRiskLevel(raw: RawAlertEvent): string {
+	if (raw.decision?.final_risk_level) return raw.decision.final_risk_level.toLowerCase();
+	if (raw.reassurance?.finalLevel) return raw.reassurance.finalLevel.toLowerCase();
 	if (raw.riskLevel) return raw.riskLevel;
 	const cc = raw.decision?.community_characteristics ?? raw.ml?.community_characteristics ?? "";
 	if (cc === "Actionable") {
-		return raw.decision?.is_multisign ? "unsafe-high" : "unsafe";
+		return raw.decision?.is_multisign ? "siaga" : "waspada";
 	}
-	return "safe";
+	return "normal";
 }
 
 export function transformAlert(raw: RawAlertEvent): AlertFeedItem {
@@ -80,12 +89,18 @@ export function transformAlert(raw: RawAlertEvent): AlertFeedItem {
 		serverTimestamp: raw.serverTimestamp ?? 0,
 		communityCharacteristics: raw.communityCharacteristics ?? raw.decision?.community_characteristics,
 		explanation: raw.ml?.explanation as ExplanationData | undefined,
+		reassurance: raw.reassurance ? {
+			shapRisk: raw.reassurance.shapRisk ?? "",
+			bmkgRisk: raw.reassurance.bmkgRisk ?? "",
+			agreed: raw.reassurance.agreed ?? false,
+			finalLevel: raw.reassurance.finalLevel ?? "",
+		} : undefined,
 	};
 }
 
 export function isUnsafe(risk: string): boolean {
 	const lower = risk.toLowerCase();
-	return lower.includes("unsafe") || lower.includes("tidak aman") || lower.includes("high") || lower.includes("actionable");
+	return lower.includes("unsafe") || lower.includes("tidak aman") || lower.includes("high") || lower.includes("actionable") || lower === "waspada" || lower === "siaga" || lower === "ekstrem";
 }
 
 export function beachName(slug: string): string {
@@ -100,9 +115,10 @@ export function codeToLabel(code: string): string {
 
 export function deriveAlertTitle(alert: AlertFeedItem): string {
 	const name = beachName(alert.beachLocation);
-	if (isUnsafe(alert.riskLevel)) {
-		return `Peringatan Bahaya di ${name}`;
-	}
+	const level = alert.riskLevel.toLowerCase();
+	if (level === "ekstrem" || level === "unsafe-high") return `BAHAYA EKSTREM di ${name}`;
+	if (level === "siaga") return `Siaga di ${name}`;
+	if (level === "waspada" || level === "unsafe") return `Waspada di ${name}`;
 	return `Kondisi Aman di ${name}`;
 }
 

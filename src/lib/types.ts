@@ -13,6 +13,17 @@ export type AlertFeedItem = {
 	serverTimestamp: number;
 	communityCharacteristics?: string;
 	explanation?: ExplanationData;
+	reassurance?: {
+		shapRisk: string;
+		bmkgRisk: string;
+		agreed: boolean;
+		finalLevel: string;
+		bmkgDetails?: {
+			waveHeight: number;
+			windSpeed: number;
+			hasWarning: boolean;
+		} | null;
+	};
 };
 
 export type BmkgData = {

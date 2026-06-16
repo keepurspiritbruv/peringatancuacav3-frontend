@@ -47,7 +47,23 @@ function codeToLabel(code: string): string {
 
 function isUnsafe(risk: string): boolean {
 	const lower = risk.toLowerCase();
-	return lower.includes("unsafe") || lower.includes("tidak aman") || lower.includes("high");
+	return lower.includes("unsafe") || lower.includes("tidak aman") || lower.includes("high") || lower === "waspada" || lower === "siaga" || lower === "ekstrem";
+}
+
+function riskBorderColor(risk: string): string {
+	const lower = risk.toLowerCase();
+	if (lower === "ekstrem" || lower === "unsafe-high") return "border-l-[#DC2626]";
+	if (lower === "siaga") return "border-l-[#EA580C]";
+	if (lower === "waspada" || lower === "unsafe") return "border-l-[#F59E0B]";
+	return "border-l-[#16A34A]";
+}
+
+function riskIconColor(risk: string): string {
+	const lower = risk.toLowerCase();
+	if (lower === "ekstrem" || lower === "unsafe-high") return "text-[#DC2626]";
+	if (lower === "siaga") return "text-[#EA580C]";
+	if (lower === "waspada" || lower === "unsafe") return "text-[#F59E0B]";
+	return "text-[#16A34A]";
 }
 
 export function AlertCard({ alert }: { alert: AlertFeedItem }) {
@@ -55,7 +71,7 @@ export function AlertCard({ alert }: { alert: AlertFeedItem }) {
 	const Icon = unsafe ? AlertTriangle : CheckCircle;
 	const [expanded, setExpanded] = useState(false);
 	const [explanationData, setExplanationData] = useState<ExplanationData | null>(null);
-	const [reassuranceData, setReassuranceData] = useState<{ shapRisk: string; bmkgRisk: string; agreed: boolean; finalLevel: string; bmkgDetails: { waveHeight: number; windSpeed: number; hasWarning: boolean } | null } | null>(null);
+	const [reassuranceData, setReassuranceData] = useState<{ shapRisk: string; bmkgRisk: string; agreed: boolean; finalLevel: string; bmkgDetails?: { waveHeight: number; windSpeed: number; hasWarning: boolean } | null } | null>(null);
 	const [loading, setLoading] = useState(false);
 
 	async function handleShowExplanation() {
@@ -64,8 +80,9 @@ export function AlertCard({ alert }: { alert: AlertFeedItem }) {
 			return;
 		}
 
-		if (alert.explanation) {
+		if (alert.explanation && alert.reassurance) {
 			setExplanationData(alert.explanation);
+			if (alert.reassurance) setReassuranceData(alert.reassurance);
 			setExpanded(true);
 			return;
 		}
@@ -81,7 +98,14 @@ export function AlertCard({ alert }: { alert: AlertFeedItem }) {
 					community_profile: result.communityProfile ?? { beach: "", overall: "", factors: [] },
 				});
 				if (result.reassurance) {
-					setReassuranceData(result.reassurance);
+					const re = result.reassurance as Record<string, unknown>;
+					setReassuranceData({
+						shapRisk: (re.shapRisk as string) ?? "",
+						bmkgRisk: (re.bmkgRisk as string) ?? "",
+						agreed: (re.agreed as boolean) ?? false,
+						finalLevel: (re.finalLevel as string) ?? "",
+						bmkgDetails: (re.bmkgDetails as { waveHeight: number; windSpeed: number; hasWarning: boolean } | null) ?? null,
+					});
 				}
 			}
 			setExpanded(true);
@@ -93,15 +117,13 @@ export function AlertCard({ alert }: { alert: AlertFeedItem }) {
 
 	return (
 		<Card
-			className={`rounded-xl shadow-sm border-l-4 ${
-				unsafe ? "border-l-[#DC2626]" : "border-l-[#16A34A]"
-			}`}
+			className={`rounded-xl shadow-sm border-l-4 ${riskBorderColor(alert.riskLevel)}`}
 		>
 			<CardContent className="p-4 space-y-3">
 				<div className="flex items-start gap-2">
 					<Icon
 						size={20}
-						className={unsafe ? "text-[#DC2626] mt-0.5 flex-shrink-0" : "text-[#16A34A] mt-0.5 flex-shrink-0"}
+						className={`${riskIconColor(alert.riskLevel)} mt-0.5 flex-shrink-0`}
 					/>
 					<div className="flex-1 min-w-0">
 						<h3 className="text-sm font-semibold leading-tight">{deriveAlertTitle(alert)}</h3>
@@ -158,8 +180,8 @@ export function AlertCard({ alert }: { alert: AlertFeedItem }) {
 					{expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
 				</button>
 
-				{expanded && explanationData && (
-					<ExplanationPanel explanation={explanationData} reassurance={reassuranceData} />
+				{expanded && (explanationData || reassuranceData) && (
+					<ExplanationPanel explanation={explanationData ?? { summary_id: "", summary_en: "", contributions: [], community_profile: { beach: "", overall: "", factors: [] } }} reassurance={reassuranceData} />
 				)}
 			</CardContent>
 		</Card>
